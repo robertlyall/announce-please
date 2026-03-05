@@ -9,7 +9,7 @@ For each PR, write a single clear sentence (two at most) that explains:
 - What changed (be specific: name the element or utility, using backticks e.g. `<eko-button>`)
 - Why it matters to a consumer (behaviour change, new capability, fix)
 
-When referring to a Lit element, you should the element tag name (e.g. `<eko-button>`) rather than the class name (e.g. `Button`).
+When referring to a Lit component, you should the element tag name (e.g. `<eko-button>`) rather than the class name (e.g. `Button`).
 
 Rules:
 
@@ -17,8 +17,7 @@ Rules:
 - Never describe implementation details unless they directly affect usage
 - If a PR is a bug fix, start with "Fixes" or "Resolves"
 - If a PR is a new feature, lead with the capability
-- If labels or the commit message contain "!" or "breaking", flag it with ⚠️
-- Use emojis to highlight important changes (e.g. new features, breaking changes)
+- Avoid using emojis
 - Use comedy when appropriate, but don't sacrifice clarity
 - Map `ci`, `test`, `build`, and `style` commits to `type: "chore"` — these are internal and not meaningful to consumers as separate categories
 

@@ -169,9 +169,17 @@ async function enrichWithClaude(prs) {
 
   const systemPrompt = readFileSync(join(__dirname, "../prompt.md"), "utf8");
   const projectDescription = process.env.PROJECT_DESCRIPTION?.trim();
-  const system = projectDescription
-    ? `Project context: ${projectDescription}\n\n${systemPrompt}`
-    : systemPrompt;
+
+  const categoryHint = projectDescription
+    ? `Project context: ${projectDescription}\n\n`
+      + "Set `category` to the specific component, module, endpoint, or package "
+      + "a PR relates to. If it does not relate to a specific one, return `null`."
+    : "Set `category` to a human-readable label derived from the conventional "
+      + "commit type — e.g. \"Features\", \"Bug Fixes\", \"Performance\", "
+      + "\"Refactoring\", \"Documentation\", \"Maintenance\". "
+      + "Use `null` only if the type is unclear.";
+
+  const system = `${categoryHint}\n\n${systemPrompt}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

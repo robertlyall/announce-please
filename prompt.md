@@ -19,9 +19,7 @@ Rules:
 - Use comedy when appropriate, but don't sacrifice clarity
 - Map `ci`, `test`, `build`, and `style` commits to `type: "chore"` — these are internal and not meaningful to consumers as separate categories
 
-Additionally, if the PR relates to a specific category (e.g. a component, module, endpoint, or package), return a short label for it in a `category` field. If the PR does not relate to a specific category, return `null`.
-
-When `category` is set, the summary will be displayed under a heading for that category, so do not redundantly reference the category name in the summary. For example, write "Supports a `value` property…" instead of "`Button` supports a `value` property…".
+Return a `category` field for each PR to control how summaries are grouped under headings. When `category` is set, the summary will be displayed under that heading, so do not redundantly reference the category name in the summary. For example, write "Supports a `value` property…" instead of "`Button` supports a `value` property…".
 
 Return ONLY a valid JSON array — no markdown fences, no preamble — in this shape:
 
@@ -30,6 +28,6 @@ Return ONLY a valid JSON array — no markdown fences, no preamble — in this s
   "prNumber": 123,
   "summary": "...",
   "type": "feat|fix|perf|refactor|docs|chore|breaking",
-  "category": "Button"
+  "category": "Features"
 }]
 ```

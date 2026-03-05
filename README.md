@@ -93,6 +93,26 @@ Supported types and their emojis:
 | `docs` | 📚 | Documentation |
 | `chore` | 🔧 | Maintenance (also covers `ci`, `test`, `build`, `style`) |
 
+## Permissions
+
+The action uses the automatic `GITHUB_TOKEN` provided by GitHub Actions to access the
+repository API (comparing tags, fetching PRs, diffs, and issues). No additional token
+configuration is required.
+
+The workflow must have at least the following
+[permissions](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token):
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+```
+
+> `issues: read` is only needed if your PRs reference issues via `Closes #123` for
+> reporter mentions. The action will still work without it, but mention lookups will
+> be skipped.
+
 ## Secrets
 
 `ANTHROPIC_API_KEY` and `SLACK_WEBHOOK_URL` can be set at org level so all consuming repos inherit them without individual configuration.

@@ -1,0 +1,72 @@
+name: Announce Release
+description: Enriches release notes using Claude and posts a Slack announcement with per-PR summaries and issue reporter mentions.
+
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key for Claude enrichment
+    required: true
+  slack-webhook-url:
+    description: Slack incoming webhook URL
+    required: true
+  release-tag:
+    description: The release tag name (e.g. v1.2.0)
+    required: true
+  release-url:
+    description: URL to the GitHub release page
+    required: true
+  package-name:
+    description: NPM package name shown in the Slack message (e.g. @krystal/ekosystem-ui)
+    required: true
+  registry-url:
+    description: URL to the package in your private registry
+    required: false
+    default: ''
+  slack-channel:
+    description: Slack channel name shown in the footer (e.g. ekosystem-ui)
+    required: false
+    default: ''
+  slack-channel-id:
+    description: Slack channel ID for the footer link (e.g. C12AB34CD)
+    required: false
+    default: ''
+
+outputs:
+  summaries:
+    description: JSON array of enriched PR summaries
+    value: ${{ steps.enrich.outputs.summaries }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install yaml
+      shell: bash
+      run: npm install yaml --prefix ${{ github.action_path }}
+
+    - name: Generate enriched changelog
+      id: enrich
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      run: node ${{ github.action_path }}/scripts/enrich.mjs
+
+    - name: Post Slack announcement
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        RELEASE_URL: ${{ inputs.release-url }}
+        SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
+        SLACK_CHANNEL: ${{ inputs.slack-channel }}
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        SUMMARIES: ${{ steps.enrich.outputs.summaries }}
+      run: node ${{ github.action_path }}/scripts/slack.mjs

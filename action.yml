@@ -15,14 +15,20 @@ inputs:
     description: URL to the GitHub release page
     required: true
   package-name:
-    description: NPM package name shown in the Slack message (e.g. @krystal/ekosystem-ui)
+    description: Package or project name shown in the Slack message
     required: true
+  project-description:
+    description: >-
+      Optional project description injected into the Claude prompt for
+      more accurate, project-aware summaries
+    required: false
+    default: ''
   registry-url:
     description: URL to the package in your private registry
     required: false
     default: ''
   slack-channel:
-    description: Slack channel name shown in the footer (e.g. ekosystem-ui)
+    description: Slack channel name shown in the footer (e.g. my-project)
     required: false
     default: ''
   slack-channel-id:
@@ -55,6 +61,7 @@ runs:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         GITHUB_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
+        PROJECT_DESCRIPTION: ${{ inputs.project-description }}
       run: node ${{ github.action_path }}/scripts/enrich.mjs
 
     - name: Post Slack announcement

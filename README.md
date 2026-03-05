@@ -7,8 +7,8 @@ A reusable GitHub composite action that enriches release notes using Claude and 
 1. **Collects PRs** — walks all commits between the previous and current tag, finding the associated PR for each
 2. **Fetches diffs** — retrieves filtered per-file diffs (lockfiles, dist output, and snapshots are excluded)
 3. **Resolves issue reporters** — parses `Closes #123` references, fetches the reporter's GitHub username, and maps it to a Slack member ID via `usernames.yml`
-4. **Enriches with Claude** — sends PR metadata to Claude and receives structured JSON summaries with a type, element, and consumer-facing sentence per PR
-5. **Posts to Slack** — builds a Block Kit payload grouping changes by element (alphabetically), with a miscellaneous section for non-element changes. Items within each group are sorted by number of files changed so larger PRs surface first
+4. **Enriches with Claude** — sends PR metadata to Claude and receives structured JSON summaries with a type, category, and consumer-facing sentence per PR
+5. **Posts to Slack** — builds a Block Kit payload grouping changes by category (alphabetically), with a miscellaneous section for uncategorised changes. Items within each group are sorted by number of files changed so larger PRs surface first
 
 ## Usage
 
@@ -36,6 +36,7 @@ jobs:
           release-tag: ${{ needs.release-please.outputs.tag_name }}
           release-url: ${{ needs.release-please.outputs.html_url }}
           package-name: '@your-org/your-package'
+          project-description: 'A React component library for internal dashboards'
           registry-url: 'https://your-registry/@your-org/your-package'
           slack-channel: 'your-channel'
           slack-channel-id: 'C12AB34CD'
@@ -50,7 +51,7 @@ jobs:
 | Input | Description |
 |---|---|
 | `anthropic-api-key` | Anthropic API key |
-| `package-name` | NPM package name shown in the Slack message |
+| `package-name` | Package or project name shown in the Slack message |
 | `release-tag` | Release tag (e.g. `v1.2.0`) |
 | `release-url` | URL to the GitHub release page |
 | `slack-webhook-url` | Slack incoming webhook URL |
@@ -59,6 +60,7 @@ jobs:
 
 | Input | Description |
 |---|---|
+| `project-description` | Project description injected into the Claude prompt for more accurate summaries |
 | `registry-url` | URL to the package in your private registry |
 | `slack-channel` | Channel name for the footer link |
 | `slack-channel-id` | Channel ID for the footer link |
@@ -76,10 +78,10 @@ Slack member IDs can be found by clicking a user's profile > **...** > **Copy me
 
 ## Changelog grouping
 
-The Slack message groups changelog items by element, then by type:
+The Slack message groups changelog items by category, then by type:
 
-1. **Element groups** — PRs tied to a specific element (e.g. `<eko-button>`) are grouped under an alphabetically sorted heading
-2. **Miscellaneous** — PRs not tied to a specific element fall under a single "Miscellaneous" heading, sorted by type
+1. **Category groups** — PRs tied to a specific category (e.g. a component, module, or endpoint) are grouped under an alphabetically sorted heading
+2. **Miscellaneous** — PRs not tied to a specific category fall under a single "Miscellaneous" heading, sorted by type
 
 Supported types and their emojis:
 

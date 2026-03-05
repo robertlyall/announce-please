@@ -43,7 +43,7 @@ function introBlock() {
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `A new version of *${PACKAGE_NAME}* has been published. Update your projects to get the latest components, fixes, and improvements.`,
+      text: `A new version of *${PACKAGE_NAME}* has been published. Update your projects to get the latest changes, fixes, and improvements.`,
     },
   };
 }
@@ -78,34 +78,28 @@ function formatLine({ prNumber, summary, type, mentions }) {
 function changelogBlocks(summaries) {
   if (!summaries.length) return [];
 
-  const elementItems = summaries.filter((s) => s.element);
-  const miscItems = summaries.filter((s) => !s.element);
+  const categorised = summaries.filter((s) => s.category);
+  const miscItems = summaries.filter((s) => !s.category);
 
   const blocks = [];
 
-  // Element groups — sorted alphabetically by element name
-  const byElement = Object.create(null);
-  for (const s of elementItems) {
-    (byElement[s.element] ??= []).push(s);
+  // Category groups — sorted alphabetically
+  const byCategory = Object.create(null);
+  for (const s of categorised) {
+    (byCategory[s.category] ??= []).push(s);
   }
-  const sortedElements = Object.keys(byElement).sort((a, b) =>
+  const sortedCategories = Object.keys(byCategory).sort((a, b) =>
     a.localeCompare(b),
   );
 
-  for (const element of sortedElements) {
-    const items = byElement[element].sort(sortByFilesChanged);
+  for (const category of sortedCategories) {
+    const items = byCategory[category].sort(sortByFilesChanged);
     const lines = items.map(formatLine);
-    const friendly = element
-      .replace(/^<eko-/, "")
-      .replace(/>$/, "")
-      .split("-")
-      .map((w) => w[0].toUpperCase() + w.slice(1))
-      .join(" ");
     blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*${friendly}* - \`${element}\`\n\n${lines.join("\n")}`,
+        text: `*${category}*\n\n${lines.join("\n")}`,
       },
     });
   }

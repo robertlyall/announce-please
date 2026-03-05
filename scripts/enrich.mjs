@@ -167,6 +167,12 @@ async function enrichWithClaude(prs) {
   // Strip mentions from what we send to Claude — not relevant to summaries
   const prsForClaude = prs.map(({ mentions: _mentions, ...rest }) => rest);
 
+  const systemPrompt = readFileSync(join(__dirname, "../prompt.md"), "utf8");
+  const projectDescription = process.env.PROJECT_DESCRIPTION?.trim();
+  const system = projectDescription
+    ? `Project context: ${projectDescription}\n\n${systemPrompt}`
+    : systemPrompt;
+
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -177,7 +183,7 @@ async function enrichWithClaude(prs) {
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2048,
-      system: readFileSync(join(__dirname, "../prompt.md"), "utf8"),
+      system,
       messages: [
         {
           role: "user",

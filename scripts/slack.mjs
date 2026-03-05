@@ -47,28 +47,36 @@ function introBlock() {
   };
 }
 
-const TYPE_EMOJI = {
-  feat: "✨",
-  fix: "🐛",
-  breaking: "⚠️",
-  chore: "🔧",
+const TYPE_ORDER = ["breaking", "feat", "fix", "chore"];
+
+const TYPE_HEADING = {
+  breaking: "*⚠️ Breaking*",
+  feat: "*✨ Features*",
+  fix: "*🐛 Fixes*",
+  chore: "*🔧 Chores*",
 };
 
-function changelogBlock(summaries) {
-  if (!summaries.length) return null;
+function changelogBlocks(summaries) {
+  if (!summaries.length) return [];
 
-  const lines = summaries.map(({ type, prNumber, summary }) => {
-    const emoji = TYPE_EMOJI[type] ?? "•";
-    return `${emoji} ${summary} _(#${prNumber})_`;
+  const grouped = Object.groupBy(summaries, (s) => s.type);
+
+  return TYPE_ORDER.flatMap((type) => {
+    const items = grouped[type];
+    if (!items?.length) return [];
+
+    const lines = items.map(
+      ({ prNumber, summary }) => `• ${summary} _(#${prNumber})_`
+    );
+
+    return {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `${TYPE_HEADING[type]}\n\n${lines.join("\n")}`,
+      },
+    };
   });
-
-  return {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `*What\'s changed*\n${lines.join("\n")}`,
-    },
-  };
 }
 
 function mentionsBlock(summaries) {
@@ -133,7 +141,7 @@ async function run() {
     headerBlock(),
     introBlock(),
     divider(),
-    changelogBlock(summaries),
+    ...changelogBlocks(summaries),
     mentionsBlock(summaries),
     divider(),
     actionsBlock(),

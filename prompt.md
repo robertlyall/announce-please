@@ -20,6 +20,11 @@ Rules:
 - If labels or the commit message contain "!" or "breaking", flag it with ⚠️
 - Use emojis to highlight important changes (e.g. new features, breaking changes)
 - Use comedy when appropriate, but don't sacrifice clarity
+- Map `ci`, `test`, `build`, and `style` commits to `type: "chore"` — these are internal and not meaningful to consumers as separate categories
+
+Additionally, if the PR relates to a specific element, return the element tag name (e.g. `<eko-select>`) in an `element` field. If the PR does not relate to a specific element, return `null`.
+
+When `element` is set, the summary will be displayed under a heading for that element, so do not redundantly reference the element name in the summary. For example, write "Supports a `value` property…" instead of "`<eko-textarea>` supports a `value` property…".
 
 Return ONLY a valid JSON array — no markdown fences, no preamble — in this shape:
 
@@ -27,6 +32,7 @@ Return ONLY a valid JSON array — no markdown fences, no preamble — in this s
 [{
   "prNumber": 123,
   "summary": "...",
-  "type": "feat|fix|chore|breaking"
+  "type": "feat|fix|perf|refactor|docs|chore|breaking",
+  "element": "<eko-select>"
 }]
 ```

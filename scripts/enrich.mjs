@@ -198,11 +198,15 @@ async function enrichWithClaude(prs) {
   try {
     const enriched = JSON.parse(text.replace(/```json|```/g, "").trim());
 
-    // Re-attach mentions from the original PR data
-    return enriched.map((entry) => ({
-      ...entry,
-      mentions: prs.find((p) => p.prNumber === entry.prNumber)?.mentions ?? [],
-    }));
+    // Re-attach mentions and file count from the original PR data
+    return enriched.map((entry) => {
+      const pr = prs.find((p) => p.prNumber === entry.prNumber);
+      return {
+        ...entry,
+        mentions: pr?.mentions ?? [],
+        filesChanged: pr?.diff?.length ?? 0,
+      };
+    });
   } catch {
     console.error("Failed to parse Claude response as JSON:", text);
     return [];

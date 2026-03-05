@@ -48,40 +48,83 @@ function introBlock() {
   };
 }
 
-const TYPE_ORDER = ["breaking", "feat", "fix", "chore"];
+const TYPE_ORDER = [
+  "breaking", "feat", "fix", "perf", "refactor", "docs", "chore",
+];
 
-const TYPE_HEADING = {
-  breaking: "*⚠️ Breaking*",
-  feat: "*✨ Features*",
-  fix: "*🐛 Fixes*",
-  chore: "*🔧 Chores*",
+const TYPE_EMOJI = {
+  breaking: "⚠️",
+  feat: "✨",
+  fix: "🐛",
+  perf: "⚡",
+  refactor: "♻️",
+  docs: "📚",
+  chore: "🔧",
 };
+
+function sortByFilesChanged(a, b) {
+  return (b.filesChanged ?? 0) - (a.filesChanged ?? 0);
+}
+
+function formatLine({ prNumber, summary, type, mentions }) {
+  const prUrl = `https://github.com/${GITHUB_REPOSITORY}/pull`;
+  const emoji = TYPE_EMOJI[type] ?? "";
+  const cc = mentions?.length
+    ? ` (cc: ${mentions.map((id) => `<@${id}>`).join(" ")})`
+    : "";
+  return `• ${emoji} ${summary}${cc} - <${prUrl}/${prNumber}|#${prNumber}>`;
+}
 
 function changelogBlocks(summaries) {
   if (!summaries.length) return [];
 
-  const grouped = Object.groupBy(summaries, (s) => s.type);
+  const elementItems = summaries.filter((s) => s.element);
+  const miscItems = summaries.filter((s) => !s.element);
 
-  return TYPE_ORDER.flatMap((type) => {
-    const items = grouped[type];
-    if (!items?.length) return [];
+  const blocks = [];
 
-    const prUrl = `https://github.com/${GITHUB_REPOSITORY}/pull`;
-    const lines = items.map(({ prNumber, summary, mentions }) => {
-      const cc = mentions?.length
-        ? ` (cc: ${mentions.map((id) => `<@${id}>`).join(" ")})`
-        : "";
-      return `• ${summary}${cc} - <${prUrl}/${prNumber}|#${prNumber}>`;
-    });
+  // Element groups — sorted alphabetically by element name
+  const byElement = Object.groupBy(elementItems, (s) => s.element);
+  const sortedElements = Object.keys(byElement).sort((a, b) =>
+    a.localeCompare(b),
+  );
 
-    return {
+  for (const element of sortedElements) {
+    const items = byElement[element].sort(sortByFilesChanged);
+    const lines = items.map(formatLine);
+    const friendly = element
+      .replace(/^<eko-/, "")
+      .replace(/>$/, "")
+      .split("-")
+      .map((w) => w[0].toUpperCase() + w.slice(1))
+      .join(" ");
+    blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `${TYPE_HEADING[type]}\n\n${lines.join("\n")}`,
+        text: `*${friendly}* - \`${element}\`\n\n${lines.join("\n")}`,
       },
-    };
-  });
+    });
+  }
+
+  // Miscellaneous — sorted by type order, then by files changed
+  if (miscItems.length) {
+    const sorted = miscItems.sort((a, b) => {
+      const typeDiff =
+        TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+      return typeDiff !== 0 ? typeDiff : sortByFilesChanged(a, b);
+    });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Miscellaneous*\n\n${sorted.map(formatLine).join("\n")}`,
+      },
+    });
+  }
+
+  return blocks;
 }
 
 function actionsBlock() {

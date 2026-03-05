@@ -1,4 +1,4 @@
-name: Announce Release
+name: Announce Please
 description: Enriches release notes using Claude and posts a Slack announcement with per-PR summaries and issue reporter mentions.
 
 inputs:

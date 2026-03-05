@@ -1,4 +1,4 @@
-# announce-release
+# announce-please
 
 A reusable GitHub composite action that enriches release notes using Claude and posts a structured Slack announcement.
 
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: robertlyall/announce-release@v1
+      - uses: robertlyall/announce-please@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

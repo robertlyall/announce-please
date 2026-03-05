@@ -55,16 +55,6 @@ function metaBlock() {
   };
 }
 
-function installBlock() {
-  return {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: `*To update:*\n\`\`\`npm install ${PACKAGE_NAME}@${RELEASE_TAG}\`\`\``,
-    },
-  };
-}
-
 const TYPE_EMOJI = {
   feat: '✨',
   fix: '🐛',
@@ -152,7 +142,6 @@ async function run() {
     introBlock(),
     divider(),
     metaBlock(),
-    installBlock(),
     divider(),
     changelogBlock(summaries),
     mentionsBlock(summaries),

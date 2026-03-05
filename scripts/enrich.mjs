@@ -176,7 +176,8 @@ async function enrichWithClaude(prs) {
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
+    const body = await response.text();
+    throw new Error(`Anthropic API error: ${response.status} — ${body}`);
   }
 
   const data = await response.json();

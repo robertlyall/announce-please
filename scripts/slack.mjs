@@ -5,6 +5,8 @@ const PACKAGE_NAME = process.env.PACKAGE_NAME;
 const REGISTRY_URL = process.env.REGISTRY_URL;
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID;
+const REPO_NAME = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? PACKAGE_NAME;
+const VERSION = RELEASE_TAG.replace(/^.*?(v\d)/, '$1');
 
 // ─── Parse summaries ──────────────────────────────────────────────────────
 
@@ -29,7 +31,7 @@ function headerBlock() {
     type: 'header',
     text: {
       type: 'plain_text',
-      text: `🌿 ${PACKAGE_NAME} ${RELEASE_TAG} is out`,
+      text: `🌿 ${REPO_NAME} ${VERSION} is out`,
       emoji: true,
     },
   };

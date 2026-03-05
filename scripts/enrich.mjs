@@ -97,9 +97,15 @@ async function fetchFilteredDiff(prNumber) {
 // ─── Collect PRs ──────────────────────────────────────────────────────────
 
 async function collectPRs(usernames) {
-  const previousTag = execSync("git describe --tags --abbrev=0 HEAD^")
-    .toString()
-    .trim();
+  let previousTag;
+  try {
+    previousTag = execSync("git describe --tags --abbrev=0 HEAD^")
+      .toString()
+      .trim();
+  } catch {
+    console.log("No previous tag found — this appears to be the first release.");
+    return [];
+  }
 
   console.log(`Comparing ${previousTag}...${currentTag}`);
 

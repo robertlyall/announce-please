@@ -70,9 +70,9 @@ function formatLine({ prNumber, summary, type, mentions }) {
   const prUrl = `https://github.com/${GITHUB_REPOSITORY}/pull`;
   const emoji = TYPE_EMOJI[type] ?? "";
   const cc = mentions?.length
-    ? ` (cc: ${mentions.map((id) => `<@${id}>`).join(" ")})`
+    ? ` (cc: ${mentions.map((id) => `<@${id}>`).join(", ")})`
     : "";
-  return `• ${emoji} ${summary}${cc} - <${prUrl}/${prNumber}|#${prNumber}>`;
+  return `${emoji} ${summary} <${prUrl}/${prNumber}|#${prNumber}>${cc}`;
 }
 
 function changelogBlocks(summaries) {

@@ -47,16 +47,6 @@ function introBlock() {
   };
 }
 
-function metaBlock() {
-  return {
-    type: 'section',
-    fields: [
-      { type: 'mrkdwn', text: `*Version*\n\`${RELEASE_TAG}\`` },
-      { type: 'mrkdwn', text: `*Package*\n\`${PACKAGE_NAME}\`` },
-    ],
-  };
-}
-
 const TYPE_EMOJI = {
   feat: '✨',
   fix: '🐛',
@@ -143,7 +133,6 @@ async function run() {
     headerBlock(),
     introBlock(),
     divider(),
-    metaBlock(),
     divider(),
     changelogBlock(summaries),
     mentionsBlock(summaries),

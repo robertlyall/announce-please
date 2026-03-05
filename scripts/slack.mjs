@@ -84,7 +84,10 @@ function changelogBlocks(summaries) {
   const blocks = [];
 
   // Element groups — sorted alphabetically by element name
-  const byElement = Object.groupBy(elementItems, (s) => s.element);
+  const byElement = Object.create(null);
+  for (const s of elementItems) {
+    (byElement[s.element] ??= []).push(s);
+  }
   const sortedElements = Object.keys(byElement).sort((a, b) =>
     a.localeCompare(b),
   );

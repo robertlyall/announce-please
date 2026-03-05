@@ -45,16 +45,23 @@ jobs:
 
 ## Inputs
 
-| Input | Required | Description |
-|---|---|---|
-| `anthropic-api-key` | Yes | Anthropic API key |
-| `slack-webhook-url` | Yes | Slack incoming webhook URL |
-| `release-tag` | Yes | Release tag (e.g. `v1.2.0`) |
-| `release-url` | Yes | URL to the GitHub release page |
-| `package-name` | Yes | NPM package name shown in the Slack message |
-| `registry-url` | No | URL to the package in your private registry |
-| `slack-channel` | No | Channel name for the footer link |
-| `slack-channel-id` | No | Channel ID for the footer link |
+### Required
+
+| Input | Description |
+|---|---|
+| `anthropic-api-key` | Anthropic API key |
+| `package-name` | NPM package name shown in the Slack message |
+| `release-tag` | Release tag (e.g. `v1.2.0`) |
+| `release-url` | URL to the GitHub release page |
+| `slack-webhook-url` | Slack incoming webhook URL |
+
+### Optional
+
+| Input | Description |
+|---|---|
+| `registry-url` | URL to the package in your private registry |
+| `slack-channel` | Channel name for the footer link |
+| `slack-channel-id` | Channel ID for the footer link |
 
 ## Username mappings
 

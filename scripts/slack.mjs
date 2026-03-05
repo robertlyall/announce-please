@@ -5,17 +5,17 @@ const PACKAGE_NAME = process.env.PACKAGE_NAME;
 const REGISTRY_URL = process.env.REGISTRY_URL;
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID;
-const REPO_NAME = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? PACKAGE_NAME;
-const VERSION = RELEASE_TAG.replace(/^.*?(v\d)/, '$1');
+const REPO_NAME = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? PACKAGE_NAME;
+const VERSION = RELEASE_TAG.replace(/^.*?(v\d)/, "$1");
 
 // ─── Parse summaries ──────────────────────────────────────────────────────
 
 function parseSummaries() {
   try {
-    const raw = (process.env.SUMMARIES ?? '[]').replace(/%0A/g, '\n');
+    const raw = (process.env.SUMMARIES ?? "[]").replace(/%0A/g, "\n");
     return JSON.parse(raw);
   } catch {
-    console.warn('Could not parse SUMMARIES — falling back to empty list.');
+    console.warn("Could not parse SUMMARIES — falling back to empty list.");
     return [];
   }
 }
@@ -23,14 +23,14 @@ function parseSummaries() {
 // ─── Block Kit builders ───────────────────────────────────────────────────
 
 function divider() {
-  return { type: 'divider' };
+  return { type: "divider" };
 }
 
 function headerBlock() {
   return {
-    type: 'header',
+    type: "header",
     text: {
-      type: 'plain_text',
+      type: "plain_text",
       text: `🌿 ${REPO_NAME} ${VERSION} is out`,
       emoji: true,
     },
@@ -39,52 +39,52 @@ function headerBlock() {
 
 function introBlock() {
   return {
-    type: 'section',
+    type: "section",
     text: {
-      type: 'mrkdwn',
+      type: "mrkdwn",
       text: `A new version of *${PACKAGE_NAME}* has been published. Update your projects to get the latest components, fixes, and improvements.`,
     },
   };
 }
 
 const TYPE_EMOJI = {
-  feat: '✨',
-  fix: '🐛',
-  breaking: '⚠️',
-  chore: '🔧',
+  feat: "✨",
+  fix: "🐛",
+  breaking: "⚠️",
+  chore: "🔧",
 };
 
 function changelogBlock(summaries) {
   if (!summaries.length) return null;
 
   const lines = summaries.map(({ type, prNumber, summary }) => {
-    const emoji = TYPE_EMOJI[type] ?? '•';
+    const emoji = TYPE_EMOJI[type] ?? "•";
     return `${emoji} ${summary} _(#${prNumber})_`;
   });
 
   return {
-    type: 'section',
+    type: "section",
     text: {
-      type: 'mrkdwn',
-      text: `*What\'s changed*\n${lines.join('\n')}`,
+      type: "mrkdwn",
+      text: `*What\'s changed*\n${lines.join("\n")}`,
     },
   };
 }
 
 function mentionsBlock(summaries) {
-  const withMentions = summaries.filter(s => s.mentions?.length);
+  const withMentions = summaries.filter((s) => s.mentions?.length);
   if (!withMentions.length) return null;
 
   const lines = withMentions.map(({ prNumber, mentions }) => {
-    const tags = mentions.map(id => `<@${id}>`).join(' ');
+    const tags = mentions.map((id) => `<@${id}>`).join(" ");
     return `${tags} — your reported issue was resolved in #${prNumber} 🎉`;
   });
 
   return {
-    type: 'section',
+    type: "section",
     text: {
-      type: 'mrkdwn',
-      text: lines.join('\n'),
+      type: "mrkdwn",
+      text: lines.join("\n"),
     },
   };
 }
@@ -92,32 +92,32 @@ function mentionsBlock(summaries) {
 function actionsBlock() {
   const elements = [
     {
-      type: 'button',
-      text: { type: 'plain_text', text: '📋 Full Changelog', emoji: true },
-      style: 'primary',
+      type: "button",
+      text: { type: "plain_text", text: "📋 Full Changelog", emoji: true },
+      style: "primary",
       url: RELEASE_URL,
     },
   ];
 
   if (REGISTRY_URL) {
     elements.push({
-      type: 'button',
-      text: { type: 'plain_text', text: '📦 Registry', emoji: true },
+      type: "button",
+      text: { type: "plain_text", text: "📦 Registry", emoji: true },
       url: REGISTRY_URL,
     });
   }
 
-  return { type: 'actions', elements };
+  return { type: "actions", elements };
 }
 
 function footerBlock() {
   if (!SLACK_CHANNEL_ID || !SLACK_CHANNEL) return null;
 
   return {
-    type: 'context',
+    type: "context",
     elements: [
       {
-        type: 'mrkdwn',
+        type: "mrkdwn",
         text: `Questions or issues? Drop them in <#${SLACK_CHANNEL_ID}|${SLACK_CHANNEL}>`,
       },
     ],
@@ -133,7 +133,6 @@ async function run() {
     headerBlock(),
     introBlock(),
     divider(),
-    divider(),
     changelogBlock(summaries),
     mentionsBlock(summaries),
     divider(),
@@ -143,11 +142,11 @@ async function run() {
 
   const payload = { blocks };
 
-  console.log('Posting to Slack:', JSON.stringify(payload, null, 2));
+  console.log("Posting to Slack:", JSON.stringify(payload, null, 2));
 
   const res = await fetch(SLACK_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
@@ -156,10 +155,10 @@ async function run() {
     throw new Error(`Slack webhook failed: ${res.status} — ${body}`);
   }
 
-  console.log('Slack notification posted successfully.');
+  console.log("Slack notification posted successfully.");
 }
 
-run().catch(err => {
+run().catch((err) => {
   console.error(err);
   process.exit(1);
 });

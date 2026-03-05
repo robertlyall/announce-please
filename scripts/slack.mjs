@@ -5,7 +5,8 @@ const PACKAGE_NAME = process.env.PACKAGE_NAME;
 const REGISTRY_URL = process.env.REGISTRY_URL;
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID;
-const REPO_NAME = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? PACKAGE_NAME;
+const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY;
+const REPO_NAME = GITHUB_REPOSITORY?.split("/")[1] ?? PACKAGE_NAME;
 const VERSION = RELEASE_TAG.replace(/^.*?(v\d)/, "$1");
 
 // ─── Parse summaries ──────────────────────────────────────────────────────
@@ -65,9 +66,13 @@ function changelogBlocks(summaries) {
     const items = grouped[type];
     if (!items?.length) return [];
 
-    const lines = items.map(
-      ({ prNumber, summary }) => `• ${summary} _(#${prNumber})_`
-    );
+    const prUrl = `https://github.com/${GITHUB_REPOSITORY}/pull`;
+    const lines = items.map(({ prNumber, summary, mentions }) => {
+      const cc = mentions?.length
+        ? ` (cc: ${mentions.map((id) => `<@${id}>`).join(" ")})`
+        : "";
+      return `• ${summary}${cc} - <${prUrl}/${prNumber}|#${prNumber}>`;
+    });
 
     return {
       type: "section",
@@ -77,24 +82,6 @@ function changelogBlocks(summaries) {
       },
     };
   });
-}
-
-function mentionsBlock(summaries) {
-  const withMentions = summaries.filter((s) => s.mentions?.length);
-  if (!withMentions.length) return null;
-
-  const lines = withMentions.map(({ prNumber, mentions }) => {
-    const tags = mentions.map((id) => `<@${id}>`).join(" ");
-    return `${tags} — your reported issue was resolved in #${prNumber} 🎉`;
-  });
-
-  return {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: lines.join("\n"),
-    },
-  };
 }
 
 function actionsBlock() {
@@ -142,7 +129,6 @@ async function run() {
     introBlock(),
     divider(),
     ...changelogBlocks(summaries),
-    mentionsBlock(summaries),
     divider(),
     actionsBlock(),
     footerBlock(),

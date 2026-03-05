@@ -53,15 +53,27 @@ function extractClosedIssues(prBody) {
   return [...(prBody ?? "").matchAll(pattern)].map((m) => parseInt(m[1]));
 }
 
+function extractRequestedBy(body) {
+  const pattern = /(?:requested|reported)\s+by\s+@(\w[\w-]*)/gi;
+  return [...(body ?? "").matchAll(pattern)].map((m) => m[1]);
+}
+
 async function collectMentions(pr, usernames) {
   const issueNumbers = extractClosedIssues(pr.prBody);
   const slackIds = new Set();
 
   for (const num of issueNumbers) {
     try {
-      const issue = await githubFetch(`/repos/${owner}/${repo}/issues/${num}`);
-      const slackId = resolveSlackId(issue.user.login, usernames);
-      if (slackId) slackIds.add(slackId);
+      const issue = await githubFetch(
+        `/repos/${owner}/${repo}/issues/${num}`,
+      );
+      const authorId = resolveSlackId(issue.user.login, usernames);
+      if (authorId) slackIds.add(authorId);
+
+      for (const username of extractRequestedBy(issue.body)) {
+        const id = resolveSlackId(username, usernames);
+        if (id) slackIds.add(id);
+      }
     } catch (err) {
       console.warn(`Could not fetch issue #${num}:`, err.message);
     }

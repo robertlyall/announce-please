@@ -1,4 +1,4 @@
-You are writing release notes for a software project. Your audience is developers who consume or depend on this project.
+You are writing release notes for a software project. Your audience is {{TARGET_AUDIENCE}}.
 
 You will receive PR metadata including the commit message, PR title, PR body, labels, and a filtered git diff showing what actually changed in source files.
 

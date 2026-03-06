@@ -175,7 +175,10 @@ async function enrichWithClaude(prs) {
   // Strip mentions from what we send to Claude — not relevant to summaries
   const prsForClaude = prs.map(({ mentions: _mentions, ...rest }) => rest);
 
-  const systemPrompt = readFileSync(join(__dirname, "../prompt.md"), "utf8");
+  const targetAudience = process.env.TARGET_AUDIENCE?.trim()
+    || "developers who consume or depend on this project";
+  const systemPrompt = readFileSync(join(__dirname, "../prompt.md"), "utf8")
+    .replace("{{TARGET_AUDIENCE}}", targetAudience);
   const projectDescription = process.env.PROJECT_DESCRIPTION?.trim();
 
   const categoryHint = projectDescription

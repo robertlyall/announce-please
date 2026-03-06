@@ -6,7 +6,7 @@ A reusable GitHub composite action that enriches release notes using Claude and 
 
 1. **Collects PRs** — walks all commits between the previous and current tag, finding the associated PR for each
 2. **Fetches diffs** — retrieves filtered per-file diffs (lockfiles, dist output, and snapshots are excluded)
-3. **Resolves issue reporters** — parses `Closes #123` references, fetches the reporter's GitHub username, and maps it to a Slack member ID via `usernames.yml`
+3. **Resolves issue reporters** — parses `Closes #123` references, fetches the reporter's GitHub username, and maps it to a Slack member ID via the `username-mappings` input
 4. **Enriches with Claude** — sends PR metadata to Claude and receives structured JSON summaries with a type, category, and consumer-facing sentence per PR
 5. **Posts to Slack** — builds a Block Kit payload grouping changes by category (alphabetically), with a miscellaneous section for uncategorised changes. Items within each group are sorted by number of files changed so larger PRs surface first
 
@@ -40,6 +40,9 @@ jobs:
           registry-url: 'https://your-registry/@your-org/your-package'
           slack-channel: 'your-channel'
           slack-channel-id: 'C12AB34CD'
+          username-mappings: |
+            githubuser:U02KMF293
+            anotheruser:U05ABCD123
 ```
 
 > `fetch-depth: 0` is required so that `git describe` can walk back to find the previous tag.
@@ -64,15 +67,21 @@ jobs:
 | `registry-url` | URL to the package in your private registry |
 | `slack-channel` | Channel name for the footer link |
 | `slack-channel-id` | Channel ID for the footer link |
+| `username-mappings` | Newline-separated `github_username:SLACK_ID` pairs for @mentioning issue reporters |
 
 ## Username mappings
 
-`usernames.yml` maps GitHub usernames to Slack member IDs so that issue reporters can be `@mentioned` in the Slack announcement.
+The `username-mappings` input maps GitHub usernames to Slack member IDs so that issue
+reporters can be `@mentioned` in the Slack announcement. Pass newline-separated
+`github_username:SLACK_ID` pairs:
 
 ```yaml
-usernames:
-  githubusername: USLACKID
+username-mappings: |
+  robertlyall:U02KMF293
+  someoneelse:U05ABCD123
 ```
+
+When omitted, issue scanning and mention resolution are skipped entirely.
 
 Slack member IDs can be found by clicking a user's profile > **...** > **Copy member ID**.
 

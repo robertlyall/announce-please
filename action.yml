@@ -35,6 +35,12 @@ inputs:
     description: Slack channel ID for the footer link (e.g. C12AB34CD)
     required: false
     default: ''
+  username-mappings:
+    description: >-
+      Newline-separated github_username:SLACK_ID pairs for @mentioning
+      issue reporters in Slack (e.g. "robertlyall:U02KMF293")
+    required: false
+    default: ''
 
 outputs:
   summaries:
@@ -49,10 +55,6 @@ runs:
       with:
         node-version: '20'
 
-    - name: Install yaml
-      shell: bash
-      run: npm install yaml --prefix ${{ github.action_path }}
-
     - name: Generate enriched changelog
       id: enrich
       shell: bash
@@ -62,6 +64,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         PROJECT_DESCRIPTION: ${{ inputs.project-description }}
+        USERNAME_MAPPINGS: ${{ inputs.username-mappings }}
       run: node ${{ github.action_path }}/scripts/enrich.mjs
 
     - name: Post Slack announcement

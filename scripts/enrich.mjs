@@ -1,12 +1,9 @@
 import { execSync } from "child_process";
 import { appendFileSync, readFileSync } from "fs";
-import { createRequire } from "module";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-const { parse } = require(join(process.env.ACTION_PATH, "node_modules/yaml"));
 
 const GITHUB_API = "https://api.github.com";
 const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
@@ -33,12 +30,19 @@ async function githubFetch(path) {
 
 // ─── Username mappings ────────────────────────────────────────────────────
 
-function loadUsernames() {
-  const file = join(__dirname, "../usernames.yml");
-  const { usernames } = parse(readFileSync(file, "utf8"));
-  // Normalise keys to lowercase for case-insensitive lookup
+function parseUsernameMappings() {
+  const raw = (process.env.USERNAME_MAPPINGS ?? "").trim();
+  if (!raw) return {};
+
   return Object.fromEntries(
-    Object.entries(usernames ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+    raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && line.includes(":"))
+      .map((line) => {
+        const sep = line.indexOf(":");
+        return [line.slice(0, sep).toLowerCase(), line.slice(sep + 1)];
+      }),
   );
 }
 
@@ -134,9 +138,12 @@ async function collectPRs(usernames) {
       if (!prs.length) return null;
       const pr = prs[0];
 
+      const hasMappings = Object.keys(usernames).length > 0;
       const [diff, mentions] = await Promise.all([
         fetchFilteredDiff(pr.number),
-        collectMentions({ prBody: pr.body, prNumber: pr.number }, usernames),
+        hasMappings
+          ? collectMentions({ prBody: pr.body, prNumber: pr.number }, usernames)
+          : [],
       ]);
 
       return {
@@ -230,7 +237,7 @@ async function enrichWithClaude(prs) {
 // ─── Main ─────────────────────────────────────────────────────────────────
 
 async function run() {
-  const usernames = loadUsernames();
+  const usernames = parseUsernameMappings();
   const prs = await collectPRs(usernames);
   console.log(`Found ${prs.length} PR(s) associated with this release.`);
 

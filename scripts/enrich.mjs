@@ -123,10 +123,11 @@ async function collectPRs(usernames) {
     return [];
   }
 
-  console.log(`Comparing ${previousTag}...${currentTag}`);
+  const currentSha = execSync("git rev-parse HEAD").toString().trim();
+  console.log(`Comparing ${previousTag}...${currentTag} (${currentSha})`);
 
   const comparison = await githubFetch(
-    `/repos/${owner}/${repo}/compare/${previousTag}...${currentTag}`,
+    `/repos/${owner}/${repo}/compare/${previousTag}...${currentSha}`,
   );
 
   const prDetails = await Promise.all(

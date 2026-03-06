@@ -35,6 +35,12 @@ inputs:
     description: Slack channel ID for the footer link (e.g. C12AB34CD)
     required: false
     default: ''
+  target-audience:
+    description: >-
+      Describes who the release notes are written for. Injected into the
+      Claude prompt to control tone and detail level.
+    required: false
+    default: 'developers who consume or depend on this project'
   username-mappings:
     description: >-
       Newline-separated github_username:SLACK_ID pairs for @mentioning
@@ -64,6 +70,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         PROJECT_DESCRIPTION: ${{ inputs.project-description }}
+        TARGET_AUDIENCE: ${{ inputs.target-audience }}
         USERNAME_MAPPINGS: ${{ inputs.username-mappings }}
       run: node ${{ github.action_path }}/scripts/enrich.mjs
 

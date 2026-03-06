@@ -37,6 +37,7 @@ jobs:
           release-url: ${{ needs.release-please.outputs.html_url }}
           package-name: '@your-org/your-package'
           project-description: 'A React component library for internal dashboards'
+          target-audience: 'frontend developers consuming the component library'
           registry-url: 'https://your-registry/@your-org/your-package'
           slack-channel: 'your-channel'
           slack-channel-id: 'C12AB34CD'
@@ -67,6 +68,7 @@ jobs:
 | `registry-url` | URL to the package in your private registry |
 | `slack-channel` | Channel name for the footer link |
 | `slack-channel-id` | Channel ID for the footer link |
+| `target-audience` | Describes who the release notes are written for, controlling tone and detail level (default: `developers who consume or depend on this project`) |
 | `username-mappings` | Newline-separated `github_username:SLACK_ID` pairs for @mentioning issue reporters |
 
 ## Username mappings

@@ -47,6 +47,12 @@ inputs:
       issue reporters in Slack (e.g. "robertlyall:U02KMF293")
     required: false
     default: ''
+  claude-model:
+    description: >-
+      The Claude model ID to use for enrichment
+      (e.g. claude-sonnet-4-6, claude-opus-4-7)
+    required: false
+    default: 'claude-sonnet-4-6'
 
 outputs:
   summaries:
@@ -67,6 +73,7 @@ runs:
       env:
         ACTION_PATH: ${{ github.action_path }}
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        CLAUDE_MODEL: ${{ inputs.claude-model }}
         GITHUB_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         PROJECT_DESCRIPTION: ${{ inputs.project-description }}

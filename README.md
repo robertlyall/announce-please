@@ -68,6 +68,7 @@ jobs:
 | `registry-url` | URL to the package in your private registry |
 | `slack-channel` | Channel name for the footer link |
 | `slack-channel-id` | Channel ID for the footer link |
+| `claude-model` | Claude model ID to use for enrichment (default: `claude-sonnet-4-6`) |
 | `target-audience` | Describes who the release notes are written for, controlling tone and detail level (default: `developers who consume or depend on this project`) |
 | `username-mappings` | Newline-separated `github_username:SLACK_ID` pairs for @mentioning issue reporters |
 

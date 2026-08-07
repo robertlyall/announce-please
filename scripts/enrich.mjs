@@ -30,12 +30,12 @@ async function githubFetch(path) {
 
 // ─── Username mappings ────────────────────────────────────────────────────
 
-function parseUsernameMappings() {
-  const raw = (process.env.USERNAME_MAPPINGS ?? "").trim();
-  if (!raw) return {};
+function parseUsernameMappings(raw) {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return {};
 
   return Object.fromEntries(
-    raw
+    trimmed
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line && line.includes(":"))
@@ -46,7 +46,7 @@ function parseUsernameMappings() {
   );
 }
 
-function resolveSlackId(githubUsername, usernames) {
+function resolveId(githubUsername, usernames) {
   return usernames[githubUsername.toLowerCase()] ?? null;
 }
 
@@ -62,28 +62,31 @@ function extractRequestedBy(body) {
   return [...(body ?? "").matchAll(pattern)].map((m) => m[1]);
 }
 
-async function collectMentions(pr, usernames) {
+async function collectMentions(pr, mappings) {
   const issueNumbers = extractClosedIssues(pr.prBody);
   const slackIds = new Set();
+  const discordIds = new Set();
 
   for (const num of issueNumbers) {
     try {
       const issue = await githubFetch(
         `/repos/${owner}/${repo}/issues/${num}`,
       );
-      const authorId = resolveSlackId(issue.user.login, usernames);
-      if (authorId) slackIds.add(authorId);
+      const reporters = [issue.user.login, ...extractRequestedBy(issue.body)];
 
-      for (const username of extractRequestedBy(issue.body)) {
-        const id = resolveSlackId(username, usernames);
-        if (id) slackIds.add(id);
+      for (const username of reporters) {
+        const slackId = resolveId(username, mappings.slack);
+        if (slackId) slackIds.add(slackId);
+
+        const discordId = resolveId(username, mappings.discord);
+        if (discordId) discordIds.add(discordId);
       }
     } catch (err) {
       console.warn(`Could not fetch issue #${num}:`, err.message);
     }
   }
 
-  return [...slackIds];
+  return { slack: [...slackIds], discord: [...discordIds] };
 }
 
 // ─── Git diff per PR ──────────────────────────────────────────────────────
@@ -112,7 +115,7 @@ async function fetchFilteredDiff(prNumber) {
 
 // ─── Collect PRs ──────────────────────────────────────────────────────────
 
-async function collectPRs(usernames) {
+async function collectPRs(mappings) {
   let previousTag;
   try {
     previousTag = execSync("git describe --tags --abbrev=0 HEAD^")
@@ -139,12 +142,14 @@ async function collectPRs(usernames) {
       if (!prs.length) return null;
       const pr = prs[0];
 
-      const hasMappings = Object.keys(usernames).length > 0;
+      const hasMappings =
+        Object.keys(mappings.slack).length > 0 ||
+        Object.keys(mappings.discord).length > 0;
       const [diff, mentions] = await Promise.all([
         fetchFilteredDiff(pr.number),
         hasMappings
-          ? collectMentions({ prBody: pr.body, prNumber: pr.number }, usernames)
-          : [],
+          ? collectMentions({ prBody: pr.body, prNumber: pr.number }, mappings)
+          : { slack: [], discord: [] },
       ]);
 
       return {
@@ -228,7 +233,7 @@ async function enrichWithClaude(prs) {
       const pr = prs.find((p) => p.prNumber === entry.prNumber);
       return {
         ...entry,
-        mentions: pr?.mentions ?? [],
+        mentions: pr?.mentions ?? { slack: [], discord: [] },
         filesChanged: pr?.diff?.length ?? 0,
       };
     });
@@ -241,8 +246,13 @@ async function enrichWithClaude(prs) {
 // ─── Main ─────────────────────────────────────────────────────────────────
 
 async function run() {
-  const usernames = parseUsernameMappings();
-  const prs = await collectPRs(usernames);
+  const mappings = {
+    slack: parseUsernameMappings(
+      process.env.SLACK_USERNAME_MAPPINGS || process.env.USERNAME_MAPPINGS,
+    ),
+    discord: parseUsernameMappings(process.env.DISCORD_USERNAME_MAPPINGS),
+  };
+  const prs = await collectPRs(mappings);
   console.log(`Found ${prs.length} PR(s) associated with this release.`);
 
   const enriched = await enrichWithClaude(prs);

@@ -1,13 +1,14 @@
 const RELEASE_TAG = process.env.RELEASE_TAG;
 const RELEASE_URL = process.env.RELEASE_URL;
-const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const PACKAGE_NAME = process.env.PACKAGE_NAME;
 const REGISTRY_URL = process.env.REGISTRY_URL;
-const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
-const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID;
+const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY;
 const REPO_NAME = GITHUB_REPOSITORY?.split("/")[1] ?? PACKAGE_NAME;
 const VERSION = RELEASE_TAG.replace(/^.*?(v\d)/, "$1");
+
+const EMBED_COLOR = 0x5865f2;
 
 // ─── Parse summaries ──────────────────────────────────────────────────────
 
@@ -21,32 +22,7 @@ function parseSummaries() {
   }
 }
 
-// ─── Block Kit builders ───────────────────────────────────────────────────
-
-function divider() {
-  return { type: "divider" };
-}
-
-function headerBlock() {
-  return {
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: `🌿 ${REPO_NAME} ${VERSION} is out`,
-      emoji: true,
-    },
-  };
-}
-
-function introBlock() {
-  return {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `A new version of *${PACKAGE_NAME}* has been published. Update your projects to get the latest changes, fixes, and improvements.`,
-    },
-  };
-}
+// ─── Embed builders ───────────────────────────────────────────────────────
 
 const TYPE_ORDER = [
   "breaking", "feat", "fix", "perf", "refactor", "docs", "chore",
@@ -69,19 +45,19 @@ function sortByFilesChanged(a, b) {
 function formatLine({ prNumber, summary, type, mentions }) {
   const prUrl = `https://github.com/${GITHUB_REPOSITORY}/pull`;
   const emoji = TYPE_EMOJI[type] ?? "";
-  const cc = mentions?.slack?.length
-    ? ` (cc: ${mentions.slack.map((id) => `<@${id}>`).join(", ")})`
+  const cc = mentions?.discord?.length
+    ? ` (cc: ${mentions.discord.map((id) => `<@${id}>`).join(", ")})`
     : "";
-  return `${emoji} ${summary} <${prUrl}/${prNumber}|#${prNumber}>${cc}`;
+  return `${emoji} ${summary} [#${prNumber}](${prUrl}/${prNumber})${cc}`;
 }
 
-function changelogBlocks(summaries) {
+function changelogFields(summaries) {
   if (!summaries.length) return [];
 
   const categorised = summaries.filter((s) => s.category);
   const miscItems = summaries.filter((s) => !s.category);
 
-  const blocks = [];
+  const fields = [];
 
   // Category groups — sorted alphabetically
   const byCategory = Object.create(null);
@@ -94,13 +70,9 @@ function changelogBlocks(summaries) {
 
   for (const category of sortedCategories) {
     const items = byCategory[category].sort(sortByFilesChanged);
-    const lines = items.map(formatLine);
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `*${category}*\n\n${lines.join("\n")}`,
-      },
+    fields.push({
+      name: category,
+      value: items.map(formatLine).join("\n"),
     });
   }
 
@@ -112,73 +84,46 @@ function changelogBlocks(summaries) {
       return typeDiff !== 0 ? typeDiff : sortByFilesChanged(a, b);
     });
 
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `*Miscellaneous*\n\n${sorted.map(formatLine).join("\n")}`,
-      },
+    fields.push({
+      name: "Miscellaneous",
+      value: sorted.map(formatLine).join("\n"),
     });
   }
 
-  return blocks;
+  return fields;
 }
 
-function actionsBlock() {
-  const elements = [
-    {
-      type: "button",
-      text: { type: "plain_text", text: "📋 Full Changelog", emoji: true },
-      style: "primary",
-      url: RELEASE_URL,
-    },
-  ];
-
-  if (REGISTRY_URL) {
-    elements.push({
-      type: "button",
-      text: { type: "plain_text", text: "📦 Registry", emoji: true },
-      url: REGISTRY_URL,
-    });
-  }
-
-  return { type: "actions", elements };
-}
-
-function footerBlock() {
-  if (!SLACK_CHANNEL_ID || !SLACK_CHANNEL) return null;
-
-  return {
-    type: "context",
-    elements: [
-      {
-        type: "mrkdwn",
-        text: `Questions or issues? Drop them in <#${SLACK_CHANNEL_ID}|${SLACK_CHANNEL}>`,
-      },
-    ],
-  };
+function links() {
+  const items = [`[📋 Full Changelog](${RELEASE_URL})`];
+  if (REGISTRY_URL) items.push(`[📦 Registry](${REGISTRY_URL})`);
+  return items.join(" • ");
 }
 
 // ─── Compose and post ─────────────────────────────────────────────────────
 
 async function run() {
   const summaries = parseSummaries();
+  const fields = changelogFields(summaries);
 
-  const blocks = [
-    headerBlock(),
-    introBlock(),
-    divider(),
-    ...changelogBlocks(summaries),
-    divider(),
-    actionsBlock(),
-    footerBlock(),
-  ].filter(Boolean);
+  if (DISCORD_CHANNEL_ID) {
+    fields.push({
+      name: "Questions or issues?",
+      value: `Drop them in <#${DISCORD_CHANNEL_ID}>`,
+    });
+  }
 
-  const payload = { blocks };
+  const embed = {
+    title: `🌿 ${REPO_NAME} ${VERSION} is out`,
+    description: `A new version of **${PACKAGE_NAME}** has been published. Update your projects to get the latest changes, fixes, and improvements.\n\n${links()}`,
+    color: EMBED_COLOR,
+    fields,
+  };
 
-  console.log("Posting to Slack:", JSON.stringify(payload, null, 2));
+  const payload = { embeds: [embed] };
 
-  const res = await fetch(SLACK_WEBHOOK_URL, {
+  console.log("Posting to Discord:", JSON.stringify(payload, null, 2));
+
+  const res = await fetch(DISCORD_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -186,10 +131,10 @@ async function run() {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Slack webhook failed: ${res.status} — ${body}`);
+    throw new Error(`Discord webhook failed: ${res.status} — ${body}`);
   }
 
-  console.log("Slack notification posted successfully.");
+  console.log("Discord notification posted successfully.");
 }
 
 run().catch((err) => {

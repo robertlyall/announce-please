@@ -1,13 +1,22 @@
 name: Announce Please
-description: Enriches release notes using Claude and posts a Slack announcement with per-PR summaries and issue reporter mentions.
+description: Enriches release notes using Claude and posts a Slack and/or Discord announcement with per-PR summaries and issue reporter mentions.
 
 inputs:
   anthropic-api-key:
     description: Anthropic API key for Claude enrichment
     required: true
   slack-webhook-url:
-    description: Slack incoming webhook URL
-    required: true
+    description: >-
+      Slack incoming webhook URL. At least one of slack-webhook-url or
+      discord-webhook-url must be provided.
+    required: false
+    default: ''
+  discord-webhook-url:
+    description: >-
+      Discord incoming webhook URL. At least one of slack-webhook-url or
+      discord-webhook-url must be provided.
+    required: false
+    default: ''
   release-tag:
     description: The release tag name (e.g. v1.2.0)
     required: true
@@ -15,7 +24,7 @@ inputs:
     description: URL to the GitHub release page
     required: true
   package-name:
-    description: Package or project name shown in the Slack message
+    description: Package or project name shown in the announcement
     required: true
   project-description:
     description: >-
@@ -35,6 +44,10 @@ inputs:
     description: Slack channel ID for the footer link (e.g. C12AB34CD)
     required: false
     default: ''
+  discord-channel-id:
+    description: Discord channel ID for the footer link (e.g. 123456789012345678)
+    required: false
+    default: ''
   target-audience:
     description: >-
       Describes who the release notes are written for. Injected into the
@@ -43,8 +56,20 @@ inputs:
     default: 'developers who consume or depend on this project'
   username-mappings:
     description: >-
+      Deprecated alias for slack-username-mappings, kept for backwards
+      compatibility. Ignored if slack-username-mappings is set.
+    required: false
+    default: ''
+  slack-username-mappings:
+    description: >-
       Newline-separated github_username:SLACK_ID pairs for @mentioning
       issue reporters in Slack (e.g. "robertlyall:U02KMF293")
+    required: false
+    default: ''
+  discord-username-mappings:
+    description: >-
+      Newline-separated github_username:DISCORD_ID pairs for @mentioning
+      issue reporters in Discord (e.g. "robertlyall:189754215833812992")
     required: false
     default: ''
   claude-model:
@@ -67,6 +92,14 @@ runs:
       with:
         node-version: '20'
 
+    - name: Validate announcement targets
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.slack-webhook-url }}" ] && [ -z "${{ inputs.discord-webhook-url }}" ]; then
+          echo "::error::At least one of 'slack-webhook-url' or 'discord-webhook-url' must be provided."
+          exit 1
+        fi
+
     - name: Generate enriched changelog
       id: enrich
       shell: bash
@@ -79,9 +112,12 @@ runs:
         PROJECT_DESCRIPTION: ${{ inputs.project-description }}
         TARGET_AUDIENCE: ${{ inputs.target-audience }}
         USERNAME_MAPPINGS: ${{ inputs.username-mappings }}
+        SLACK_USERNAME_MAPPINGS: ${{ inputs.slack-username-mappings }}
+        DISCORD_USERNAME_MAPPINGS: ${{ inputs.discord-username-mappings }}
       run: node ${{ github.action_path }}/scripts/enrich.mjs
 
     - name: Post Slack announcement
+      if: ${{ inputs.slack-webhook-url != '' }}
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
@@ -94,3 +130,17 @@ runs:
         SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
         SUMMARIES: ${{ steps.enrich.outputs.summaries }}
       run: node ${{ github.action_path }}/scripts/slack.mjs
+
+    - name: Post Discord announcement
+      if: ${{ inputs.discord-webhook-url != '' }}
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        RELEASE_URL: ${{ inputs.release-url }}
+        DISCORD_CHANNEL_ID: ${{ inputs.discord-channel-id }}
+        DISCORD_WEBHOOK_URL: ${{ inputs.discord-webhook-url }}
+        SUMMARIES: ${{ steps.enrich.outputs.summaries }}
+      run: node ${{ github.action_path }}/scripts/discord.mjs
